@@ -2,7 +2,7 @@
 .Synopsis
 	Downloads and concatenates the files in a playlist.
 .Parameter href
-	The location of the target playlist. Commonly found as the src argument of a video tag.
+	The location of the target playlist. Commonly found as the src argument of the video tag.
 .Parameter entry
 	The entry in the playlist to download. Usually there are several entries in a playlist, each a different quality. Default is to download the first entry.
 #>
@@ -92,15 +92,14 @@ foreach($l in $list)
 write-host "`rMerging files..."
 
 $fileEntries = Get-ChildItem $tmpdir | sort-object lastwritetime
-
+$outputstream = [System.IO.File]::Open($outfile,[System.IO.FileMode]::Append)
 foreach( $file in $fileEntries )
 {
 	write-host -nonewline -separator " " "`r" $file
 	$data = [System.IO.File]::ReadAllBytes($file.FullName)
-	$outputstream = [System.IO.File]::Open($outfile,[System.IO.FileMode]::Append)
 	$outputstream.Write( $data, 0, $data.length )
-	$outputstream.Close()
 }
+$outputstream.Close()
 write-host "`rCleaning temp files..."
 remove-item $tmpdir -recurse
 write-host "Done."
