@@ -13,44 +13,46 @@ param(
 	[parameter(mandatory=$false)]
 	[int]$entry = 1
 )
-write-host "Parsing playlists..."
+$baseFolder = (split-path $MyInvocation.MyCommand.Path )
+
+function getTmpFolderName
+{
+	param( [string]$file )
+	$enc = [System.Text.Encoding]::UTF8.GetBytes( $file )
+	$cr = (New-Object System.Security.Cryptography.MD5CryptoServiceProvider)
+	$bytes = $cr.ComputeHash( $enc )
+	return [string]::Format( "{0:X2}{1:X2}{2:X2}{3:X2}", $bytes[0],$bytes[1],$bytes[2],$bytes[3] )
+}
 
 function getFromPlaylist
 {
 	param( [string]$file )
 	$basepath = $href.Substring(0,$href.LastIndexOf("/")+1)
-	$tmpfile = 'tmp2ee8'
-	if(test-path -Path $tmpfile)
-	{
+	$tmpfile = $baseFolder + '\tmp2ee8'
+	if(test-path -Path $tmpfile) {
 		remove-item $tmpfile
 	}
-
-	(New-Object System.Net.WebClient).DownloadFile($basepath+$file, $tmpfile )
+	(New-Object System.Net.WebClient).DownloadFile($basepath + $file, $tmpfile )
 	Get-Content $tmpfile | Foreach-Object {
-		if( ! $_.StartsWith("#") )
-		{
+		if( ! $_.StartsWith("#") ) {
 			return $basepath+$_
 		}
 	}
-
 	remove-item $tmpfile
 }
 
 function getPlaylist
 {
-	$tmpfile = 'tmp3938'
-	if(test-path -Path $tmpfile)
-	{
+	param( [string]$playlisthref )
+	$tmpfile = $baseFolder + '\tmp3938'
+	if(test-path -Path $tmpfile) {
 		remove-item $tmpfile
 	}
 
-	(New-Object System.Net.WebClient).DownloadFile($href, $tmpfile )
-
+	(New-Object System.Net.WebClient).DownloadFile($playlisthref, $tmpfile )
 	Get-Content $tmpfile | Foreach-Object {
-		if( ! $_.StartsWith("#") )
-		{
-			if( $entry -eq 1 )
-			{
+		if( ! $_.StartsWith("#") ) {
+			if( $entry -eq 1 ) {
 				$_
 			}
 			$entry = $entry - 1
@@ -58,51 +60,52 @@ function getPlaylist
 	}
 	remove-item $tmpfile
 }
-try{
-$p = getPlaylist
-$list = getFromPlaylist $p
 
-$tmpdir = "tmp39e"
-if( !(test-path -Path $tmpdir) )
-{
-	New-Item $tmpdir -type directory | Out-Null
-}
-$outfile = $p.Substring(0, $p.LastIndexOf(".") ) + ".ts"
 
-$counter = 0;
-while( test-path -Path $outfile )
+try
 {
-	$outfile = $p.Substring(0, $p.LastIndexOf(".") ) + "_" + $counter + ".ts"
-	$counter = $counter + 1
-}
+	write-host "Parsing playlists..."
+	$p = getPlaylist $href
+	$list = getFromPlaylist $p
+	
+	$outfile = $p.Substring(0, $p.LastIndexOf(".") ) + ".ts"
+	$outhash = getTmpFolderName $outfile
+	$tmpdir = $baseFolder + '\tmp' + $outhash
 
-sc -Path $outfile -value $null
-$counter = 1
-write-host "Downloading files..."
-foreach($l in $list)
-{
-	$tmpfile = $tmpdir + "\tmp_f" + $counter
-	if( !(test-path -Path $tmpfile))
+	if( !(test-path -Path $tmpdir) )
 	{
-		write-host -nonewline -separator " " "`r" $counter "of" $list.length 
-		(New-Object System.Net.WebClient).DownloadFile($l, $tmpfile )
+		New-Item $tmpdir -type directory | Out-Null
 	}
-	$counter = $counter + 1
-}
-write-host "`rMerging files..."
 
-$fileEntries = Get-ChildItem $tmpdir | sort-object lastwritetime
-$outputstream = [System.IO.File]::Open($outfile,[System.IO.FileMode]::Append)
-foreach( $file in $fileEntries )
-{
-	write-host -nonewline -separator " " "`r" $file
-	$data = [System.IO.File]::ReadAllBytes($file.FullName)
-	$outputstream.Write( $data, 0, $data.length )
+	write-host "Downloading files..."
+	$counter = 1
+	foreach($l in $list)
+	{
+		$tmpfile = $tmpdir + "\tmp_f" + $counter
+		if( !(test-path -Path $tmpfile))
+		{
+			write-host -nonewline -separator " " "`r" $counter "of" $list.length 
+			(New-Object System.Net.WebClient).DownloadFile($l, $tmpfile )
+		}
+		$counter = $counter + 1
+	}
+	
+	write-host "`rMerging files..."
+	$fileEntries = Get-ChildItem $tmpdir | sort-object lastwritetime
+	$outputstream = [System.IO.File]::Open($outfile,[System.IO.FileMode]::Append)
+	foreach( $file in $fileEntries )
+	{
+		write-host -nonewline -separator " " "`r" $file
+		$data = [System.IO.File]::ReadAllBytes($file.FullName)
+		$outputstream.Write( $data, 0, $data.length )
+	}
+	$outputstream.Close()
+
+	write-host "`rCleaning temp files..."
+	remove-item $tmpdir -recurse
+	write-host "Done."
 }
-$outputstream.Close()
-write-host "`rCleaning temp files..."
-remove-item $tmpdir -recurse
-write-host "Done."
-}catch{
-$error[0]
+catch
+{
+	$error[0]
 }
