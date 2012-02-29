@@ -92,7 +92,7 @@ try
 	
 	write-host "`rMerging files..."
 	$fileEntries = Get-ChildItem $tmpdir | sort-object lastwritetime
-	$outputstream = [System.IO.File]::Open($outfile,[System.IO.FileMode]::Append)
+	$outputstream = [System.IO.File]::Open($baseFolder + "\" + $outfile,[System.IO.FileMode]::Append)
 	foreach( $file in $fileEntries )
 	{
 		write-host -nonewline -separator " " "`r" $file
