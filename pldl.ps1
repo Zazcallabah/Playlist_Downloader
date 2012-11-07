@@ -11,6 +11,8 @@ param(
 	[parameter(mandatory=$true)]
 	[string]$href,
 	[parameter(mandatory=$false)]
+	[string]$output = "file.bin",
+	[parameter(mandatory=$false)]
 	[int]$entry = 1
 )
 $baseFolder = (split-path $MyInvocation.MyCommand.Path )
@@ -32,10 +34,10 @@ function getFromPlaylist
 	if(test-path -Path $tmpfile) {
 		remove-item $tmpfile
 	}
-	(New-Object System.Net.WebClient).DownloadFile($basepath + $file, $tmpfile )
+	(New-Object System.Net.WebClient).DownloadFile($file, $tmpfile )
 	Get-Content $tmpfile | Foreach-Object {
 		if( ! $_.StartsWith("#") ) {
-			return $basepath+$_
+			return $_
 		}
 	}
 	remove-item $tmpfile
@@ -68,8 +70,8 @@ try
 	$p = getPlaylist $href
 	$list = getFromPlaylist $p
 	
-	$outfile = $p.Substring(0, $p.LastIndexOf(".") ) + ".ts"
-	$outhash = getTmpFolderName $outfile
+
+	$outhash = getTmpFolderName $p
 	$tmpdir = $baseFolder + '\tmp' + $outhash
 
 	if( !(test-path -Path $tmpdir) )
