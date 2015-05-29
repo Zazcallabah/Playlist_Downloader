@@ -11,7 +11,7 @@ param(
 	[parameter(mandatory=$true)]
 	[string]$href,
 	[parameter(mandatory=$false)]
-	[string]$output = "file.bin",
+	[string]$outfile = "file.bin",
 	[parameter(mandatory=$false)]
 	[int]$entry = 1
 )
