@@ -1,3 +1,5 @@
+# pldl
+
 This script will, given a href to a m3u playlist:
 
 1) download that playlist
@@ -6,3 +8,7 @@ This script will, given a href to a m3u playlist:
 4) download all files in the second-tier playlist
 5) concatenate those files together into one big file.
 
+
+# zp
+
+Given a url to an escapist video page, this script will download that video, then use the "previous video" link to download the previous video, and so on.
