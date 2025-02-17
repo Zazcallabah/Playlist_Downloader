@@ -9,6 +9,11 @@ This script will, given a href to a m3u playlist:
 5) concatenate those files together into one big file.
 
 
-# zp
+# leech & joinfile
+leech: grab m3u8 files out of a harfile, download an audio and video stream into separate folders
 
-Given a url to an escapist video page, this script will download that video, then use the "previous video" link to download the previous video, and so on.
+joinfile: stitch the two sets of files together by concatenation then ffmpeg remux into single container
+
+
+# ffmpeg-wrapper
+just a reference to basic ffmpeg single-stream compression and remuxing
